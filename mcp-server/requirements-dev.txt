@@ -1,0 +1,20 @@
+# Development Dependencies for MCP Server
+# These are only needed for development and testing
+
+# Testing Framework - Industry-standard testing for Python
+pytest>=8.0.0
+
+# Async Testing - Test async functions with pytest
+pytest-asyncio>=0.23.0
+
+# Code Coverage - Measure test coverage
+pytest-cov>=4.1.0
+
+# Code Formatter - Consistent code style
+black>=24.0.0
+
+# Type Checker - Static type checking
+mypy>=1.8.0
+
+# Linter - Code quality and style enforcement
+ruff>=0.1.0
