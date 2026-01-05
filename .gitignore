@@ -1,21 +1,88 @@
-.gradle
+# Gradle
+.gradle/
 **/build/
 !**/src/**/build/
-
-# Ignore Gradle GUI config
 gradle-app.setting
-
-# Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
-!gradle-wrapper.jar
-
-# Avoid ignore Gradle wrappper properties
-!gradle-wrapper.properties
-
-# Cache of project
 .gradletasknamecache
 
-# Eclipse Gradle plugin generated files
-# Eclipse Core
+# Gradle wrapper (keep these files)
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
+# Gradle wrapper distributions (ignore downloaded gradle distributions)
+gradle/wrapper/dists/
+gradle/caches/
+
+# IntelliJ IDEA
+.idea/*
+!.idea/codeStyles/
+!.idea/inspectionProfiles/
+!.idea/runConfigurations/
+!.idea/.gitignore
+!.idea/misc.xml
+*.iml
+*.ipr
+*.iws
+out/
+
+# Kotlin
+.kotlin/
+*.kt.swp
+
+# Eclipse
 .project
-# JDT-specific (Eclipse Java Development Tools)
 .classpath
+.settings/
+bin/
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+esd.tmp
+Desktop.ini
+
+# Linux
+*~
+
+# Logs
+*.log
+logs/
+
+# Spring Boot
+application-local.yml
+application-local.yaml
+application-dev.yml
+application-dev.yaml
+
+# Secrets and sensitive files
+*.env
+*.env.local
+.env.local
+.env.*.local
+secrets/
+credentials/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.~*
+
+# Test coverage reports
+coverage/
+*.coverage
+.nyc_output/
+
+# JVM
+*.class
+hs_err_pid*
+replay_pid*
