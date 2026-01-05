@@ -1,0 +1,757 @@
+openapi: 3.1.0
+
+info:
+  title: Weather-Music API
+  version: 1.0.0
+  description: |
+    **Mood-Based Music Recommendations by Weather**
+
+    This API provides music recommendations based on the emotional "mood" created by current weather conditions.
+    It combines real-time weather data from OpenWeather with Spotify's audio analysis features to create
+    contextual music experiences.
+
+    ## How It Works
+
+    1. **Detect** current weather conditions for a region (via OpenWeather API)
+    2. **Map** weather to emotional characteristics (mood profile)
+    3. **Match** Spotify music with similar emotional profiles using audio features (valence, energy)
+    4. **Recommend** playlists and tracks that fit the weather-induced mood
+
+    ## Audio Features Explained
+
+    - **Valence (0.0 - 1.0)**: Musical positiveness/negativity
+      - High valence (0.6-1.0): Happy, cheerful, euphoric
+      - Low valence (0.0-0.4): Sad, melancholic, angry
+
+    - **Energy (0.0 - 1.0)**: Intensity and activity level
+      - High energy (0.6-1.0): Fast, loud, noisy
+      - Low energy (0.0-0.4): Calm, quiet, peaceful
+
+    ## Weather-to-Mood Mapping
+
+    | Weather | Mood | Valence | Energy | Description |
+    |---------|------|---------|--------|-------------|
+    | Rain, Drizzle | Melancholic | 0.0-0.4 | 0.3-0.6 | Introspective, contemplative |
+    | Thunderstorm | Intense | 0.0-0.3 | 0.6-1.0 | Dramatic, powerful |
+    | Clear, Sunny | Happy | 0.6-1.0 | 0.5-0.8 | Uplifting, energetic |
+    | Clouds | Calm | 0.3-0.6 | 0.2-0.5 | Relaxed, mellow |
+    | Snow | Peaceful | 0.4-0.7 | 0.1-0.4 | Serene, quiet |
+
+  contact:
+    name: Weather-Music API Support
+    email: support@weather-music.example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+  - url: https://api.weather-music.example.com
+    description: Production server
+
+tags:
+  - name: Weather
+    description: Weather data endpoints
+  - name: Music
+    description: Music recommendation endpoints
+  - name: Context
+    description: Aggregated context endpoints
+  - name: Health
+    description: Health check endpoints
+
+paths:
+  /api/v1/regions/{region}/weather:
+    get:
+      tags:
+        - Weather
+      summary: Get current weather for a region
+      description: |
+        Returns current weather conditions for the specified region.
+
+        **What it does:**
+        - Fetches real-time weather data from OpenWeather API
+        - Resolves region names to geographic coordinates
+        - Returns weather condition, temperature, humidity, and description
+
+        **What it does NOT do:**
+        - Does NOT provide weather forecasts (only current conditions)
+        - Does NOT include music recommendations (use `/mood-music` or `/weather-context` for that)
+        - Does NOT cache data for more than 30 minutes
+
+        **Region format:**
+        - City name: "Madrid", "London", "New York"
+        - City with country: "Madrid,ES" or "London,GB"
+        - Coordinates: "40.4168,-3.7038" (latitude,longitude)
+
+      operationId: getWeather
+      parameters:
+        - name: region
+          in: path
+          required: true
+          description: Region identifier (city name, city with country code, or coordinates)
+          schema:
+            type: string
+          examples:
+            cityName:
+              value: Madrid
+              summary: City name only
+            cityWithCountry:
+              value: "Madrid,ES"
+              summary: City with ISO country code
+            coordinates:
+              value: "40.4168,-3.7038"
+              summary: Latitude,Longitude
+      responses:
+        '200':
+          description: Weather data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeatherResponse'
+              examples:
+                rainyDay:
+                  summary: Rainy day in Madrid
+                  value:
+                    region: Madrid
+                    weather:
+                      condition: Rain
+                      temperature: 15
+                      temperatureUnit: celsius
+                      description: light rain
+                      humidity: 85
+                      windSpeed: 12
+                      timestamp: "2026-01-05T12:00:00Z"
+                sunnyDay:
+                  summary: Sunny day in Barcelona
+                  value:
+                    region: Barcelona
+                    weather:
+                      condition: Clear
+                      temperature: 24
+                      temperatureUnit: celsius
+                      description: clear sky
+                      humidity: 55
+                      windSpeed: 8
+                      timestamp: "2026-01-05T12:00:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /api/v1/regions/{region}/mood-music:
+    get:
+      tags:
+        - Music
+      summary: Get music recommendations based on weather mood
+      description: |
+        Returns music recommendations (playlists and tracks) that match the emotional mood
+        created by the current weather conditions.
+
+        **What it does:**
+        - Fetches current weather for the region
+        - Maps weather condition to mood characteristics (valence, energy ranges)
+        - Searches Spotify for playlists/tracks matching the mood profile
+        - Filters results by audio features (valence, energy)
+        - Ranks recommendations by feature match score
+        - Returns top N recommendations with Spotify URLs
+
+        **What it does NOT do:**
+        - Does NOT create personalized recommendations based on user listening history
+        - Does NOT require Spotify user authentication
+        - Does NOT modify or create playlists in user accounts
+        - Does NOT guarantee all recommendations are available in all regions
+
+        **Mood Matching:**
+        - Uses Spotify's audio analysis (valence, energy) to find matching music
+        - Prioritizes playlists with names/descriptions related to weather (e.g., "rainy day")
+        - Returns both playlists and individual tracks
+
+      operationId: getMoodMusic
+      parameters:
+        - name: region
+          in: path
+          required: true
+          description: Region identifier (city name or coordinates)
+          schema:
+            type: string
+          example: Madrid
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of recommendations to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+        - name: type
+          in: query
+          required: false
+          description: Type of recommendations to return
+          schema:
+            type: string
+            enum: [playlist, track, both]
+            default: both
+      responses:
+        '200':
+          description: Music recommendations retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MoodMusicResponse'
+              examples:
+                rainyDayMusic:
+                  summary: Melancholic music for rainy day
+                  value:
+                    region: Madrid
+                    mood:
+                      name: Melancholic
+                      description: Introspective and contemplative music
+                      valence:
+                        min: 0.0
+                        max: 0.4
+                      energy:
+                        min: 0.3
+                        max: 0.6
+                    recommendations:
+                      - id: 37i9dQZF1DX0SM0LYsmbMT
+                        name: Rainy Day
+                        type: playlist
+                        description: Cozy rainy day vibes
+                        trackCount: 50
+                        avgValence: 0.32
+                        avgEnergy: 0.45
+                        url: https://open.spotify.com/playlist/37i9dQZF1DX0SM0LYsmbMT
+                        imageUrl: https://i.scdn.co/image/ab67706f00000002...
+                      - id: 37i9dQZF1DWZd79rJ6a7lp
+                        name: Chill Lofi Study Beats
+                        type: playlist
+                        description: The perfect study beats, twenty four seven.
+                        trackCount: 175
+                        avgValence: 0.28
+                        avgEnergy: 0.38
+                        url: https://open.spotify.com/playlist/37i9dQZF1DWZd79rJ6a7lp
+                        imageUrl: https://i.scdn.co/image/ab67706f00000002...
+                    total: 10
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /api/v1/regions/{region}/weather-context:
+    get:
+      tags:
+        - Context
+      summary: Get aggregated weather context with music recommendations
+      description: |
+        Aggregated endpoint that combines weather data, mood profile, and music recommendations
+        in a single response. This is the most convenient endpoint for getting complete context.
+
+        **What it does:**
+        - Fetches current weather conditions
+        - Determines mood profile based on weather
+        - Retrieves matching music recommendations
+        - Returns everything in a single, unified response
+
+        **What it does NOT do:**
+        - Does NOT provide weather forecasts
+        - Does NOT include historical weather or music data
+        - Does NOT personalize based on user preferences
+
+        **Use cases:**
+        - LLM/MCP integration (single call for complete context)
+        - Dashboard applications showing weather + music
+        - Quick lookups without multiple API calls
+
+        **Performance:**
+        - Single request instead of 2-3 separate calls
+        - May take slightly longer than individual endpoints
+        - Response is cached for 30 minutes
+
+      operationId: getWeatherContext
+      parameters:
+        - name: region
+          in: path
+          required: true
+          description: Region identifier (city name or coordinates)
+          schema:
+            type: string
+          example: Madrid
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of music recommendations to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        '200':
+          description: Weather context with music recommendations retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeatherContextResponse'
+              examples:
+                completeContext:
+                  summary: Complete context for rainy Madrid
+                  value:
+                    region: Madrid
+                    timestamp: "2026-01-05T12:00:00Z"
+                    weather:
+                      condition: Rain
+                      temperature: 15
+                      temperatureUnit: celsius
+                      description: light rain
+                      humidity: 85
+                      windSpeed: 12
+                    mood:
+                      name: Melancholic
+                      description: Introspective and contemplative music
+                      valence:
+                        min: 0.0
+                        max: 0.4
+                      energy:
+                        min: 0.3
+                        max: 0.6
+                    recommendations:
+                      - id: 37i9dQZF1DX0SM0LYsmbMT
+                        name: Rainy Day
+                        type: playlist
+                        description: Cozy rainy day vibes
+                        trackCount: 50
+                        avgValence: 0.32
+                        avgEnergy: 0.45
+                        url: https://open.spotify.com/playlist/37i9dQZF1DX0SM0LYsmbMT
+                        imageUrl: https://i.scdn.co/image/ab67706f00000002...
+                    total: 10
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /api/v1/health/external:
+    get:
+      tags:
+        - Health
+      summary: Health check for external API dependencies
+      description: |
+        Returns the health status of external API dependencies (Spotify and OpenWeather).
+
+        **What it does:**
+        - Pings Spotify API to check availability and response time
+        - Pings OpenWeather API to check availability and response time
+        - Returns overall health status (healthy/degraded/unhealthy)
+        - Includes individual service status and response times
+
+        **What it does NOT do:**
+        - Does NOT check authentication credentials validity
+        - Does NOT verify API rate limits or quotas
+        - Does NOT test actual functionality (only connectivity)
+
+        **Health statuses:**
+        - `healthy`: All services responding normally (< 500ms)
+        - `degraded`: Services responding slowly (500ms - 2000ms)
+        - `unhealthy`: One or more services unavailable
+
+        **Use cases:**
+        - Monitoring and alerting
+        - Pre-flight checks before making requests
+        - Debugging connectivity issues
+
+      operationId: getExternalHealth
+      responses:
+        '200':
+          description: Health check completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                allHealthy:
+                  summary: All services healthy
+                  value:
+                    status: healthy
+                    timestamp: "2026-01-05T12:00:00Z"
+                    services:
+                      spotify:
+                        status: up
+                        responseTime: 145
+                      openweather:
+                        status: up
+                        responseTime: 89
+                degraded:
+                  summary: Services degraded (slow)
+                  value:
+                    status: degraded
+                    timestamp: "2026-01-05T12:00:00Z"
+                    services:
+                      spotify:
+                        status: up
+                        responseTime: 1250
+                      openweather:
+                        status: up
+                        responseTime: 890
+                unhealthy:
+                  summary: Service unavailable
+                  value:
+                    status: unhealthy
+                    timestamp: "2026-01-05T12:00:00Z"
+                    services:
+                      spotify:
+                        status: down
+                        responseTime: null
+                        error: Connection timeout
+                      openweather:
+                        status: up
+                        responseTime: 95
+
+components:
+  schemas:
+    WeatherResponse:
+      type: object
+      required:
+        - region
+        - weather
+      properties:
+        region:
+          type: string
+          description: Region name or identifier
+          example: Madrid
+        weather:
+          $ref: '#/components/schemas/Weather'
+
+    Weather:
+      type: object
+      required:
+        - condition
+        - temperature
+        - temperatureUnit
+        - description
+        - timestamp
+      properties:
+        condition:
+          type: string
+          description: Primary weather condition
+          enum:
+            - Clear
+            - Clouds
+            - Rain
+            - Drizzle
+            - Thunderstorm
+            - Snow
+            - Mist
+            - Fog
+          example: Rain
+        temperature:
+          type: number
+          format: float
+          description: Current temperature
+          example: 15.5
+        temperatureUnit:
+          type: string
+          enum: [celsius, fahrenheit]
+          default: celsius
+          example: celsius
+        description:
+          type: string
+          description: Detailed weather description
+          example: light rain
+        humidity:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Humidity percentage
+          example: 85
+        windSpeed:
+          type: number
+          format: float
+          description: Wind speed in km/h
+          example: 12.5
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when weather data was retrieved
+          example: "2026-01-05T12:00:00Z"
+
+    MoodMusicResponse:
+      type: object
+      required:
+        - region
+        - mood
+        - recommendations
+        - total
+      properties:
+        region:
+          type: string
+          description: Region name
+          example: Madrid
+        mood:
+          $ref: '#/components/schemas/MoodProfile'
+        recommendations:
+          type: array
+          items:
+            $ref: '#/components/schemas/MusicRecommendation'
+          description: List of music recommendations
+        total:
+          type: integer
+          description: Total number of recommendations returned
+          example: 10
+
+    WeatherContextResponse:
+      type: object
+      required:
+        - region
+        - timestamp
+        - weather
+        - mood
+        - recommendations
+        - total
+      properties:
+        region:
+          type: string
+          description: Region name
+          example: Madrid
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the aggregated data
+          example: "2026-01-05T12:00:00Z"
+        weather:
+          $ref: '#/components/schemas/Weather'
+        mood:
+          $ref: '#/components/schemas/MoodProfile'
+        recommendations:
+          type: array
+          items:
+            $ref: '#/components/schemas/MusicRecommendation'
+        total:
+          type: integer
+          description: Total number of recommendations
+          example: 10
+
+    MoodProfile:
+      type: object
+      required:
+        - name
+        - description
+        - valence
+        - energy
+      properties:
+        name:
+          type: string
+          description: Mood name
+          enum:
+            - Melancholic
+            - Intense
+            - Happy
+            - Calm
+            - Peaceful
+            - Mysterious
+          example: Melancholic
+        description:
+          type: string
+          description: Human-readable mood description
+          example: Introspective and contemplative music
+        valence:
+          $ref: '#/components/schemas/Range'
+        energy:
+          $ref: '#/components/schemas/Range'
+
+    Range:
+      type: object
+      required:
+        - min
+        - max
+      properties:
+        min:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: Minimum value (inclusive)
+          example: 0.0
+        max:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: Maximum value (inclusive)
+          example: 0.4
+
+    MusicRecommendation:
+      type: object
+      required:
+        - id
+        - name
+        - type
+        - url
+      properties:
+        id:
+          type: string
+          description: Spotify ID
+          example: 37i9dQZF1DX0SM0LYsmbMT
+        name:
+          type: string
+          description: Playlist or track name
+          example: Rainy Day
+        type:
+          type: string
+          enum: [playlist, track]
+          description: Type of recommendation
+          example: playlist
+        description:
+          type: string
+          description: Playlist or track description
+          example: Cozy rainy day vibes
+        trackCount:
+          type: integer
+          description: Number of tracks (only for playlists)
+          example: 50
+        avgValence:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: Average valence of the playlist/track
+          example: 0.32
+        avgEnergy:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: Average energy of the playlist/track
+          example: 0.45
+        url:
+          type: string
+          format: uri
+          description: Spotify URL
+          example: https://open.spotify.com/playlist/37i9dQZF1DX0SM0LYsmbMT
+        imageUrl:
+          type: string
+          format: uri
+          description: Cover image URL
+          example: https://i.scdn.co/image/ab67706f00000002...
+
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+        - services
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+          description: Overall health status
+          example: healthy
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of health check
+          example: "2026-01-05T12:00:00Z"
+        services:
+          type: object
+          required:
+            - spotify
+            - openweather
+          properties:
+            spotify:
+              $ref: '#/components/schemas/ServiceHealth'
+            openweather:
+              $ref: '#/components/schemas/ServiceHealth'
+
+    ServiceHealth:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [up, down]
+          description: Service availability status
+          example: up
+        responseTime:
+          type: integer
+          description: Response time in milliseconds (null if down)
+          example: 145
+          nullable: true
+        error:
+          type: string
+          description: Error message if service is down
+          example: Connection timeout
+          nullable: true
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+        - timestamp
+      properties:
+        error:
+          type: string
+          description: Error type
+          example: NOT_FOUND
+        message:
+          type: string
+          description: Human-readable error message
+          example: Region 'XYZ' not found. Did you mean 'Madrid'?
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-01-05T12:00:00Z"
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+
+  responses:
+    BadRequest:
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: BAD_REQUEST
+            message: Invalid region format. Use city name (e.g., 'Madrid') or coordinates (e.g., '40.4168,-3.7038')
+            timestamp: "2026-01-05T12:00:00Z"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: NOT_FOUND
+            message: Region 'XYZ123' not found. Please check the region name.
+            timestamp: "2026-01-05T12:00:00Z"
+            details:
+              suggestions:
+                - Madrid
+                - Barcelona
+                - Valencia
+
+    ServiceUnavailable:
+      description: External service unavailable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: SERVICE_UNAVAILABLE
+            message: External weather service is temporarily unavailable. Please try again later.
+            timestamp: "2026-01-05T12:00:00Z"
+            details:
+              service: openweather
+              retryAfter: 60
