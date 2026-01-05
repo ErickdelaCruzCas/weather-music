@@ -12,6 +12,9 @@ gradle-app.setting
 # Gradle wrapper distributions (ignore downloaded gradle distributions)
 gradle/wrapper/dists/
 gradle/caches/
+gradle/daemon/
+gradle/kotlin-profile/
+gradle/native/
 
 # IntelliJ IDEA
 .idea/*
