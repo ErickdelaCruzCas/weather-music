@@ -25,6 +25,11 @@ gradle/caches/
 *.iws
 out/
 
+# HTTP Client (IntelliJ IDEA)
+.idea/httpRequests/
+http-client.private.env.json
+**/http-client.cookies
+
 # Kotlin
 .kotlin/
 *.kt.swp

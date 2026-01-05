@@ -1,0 +1,253 @@
+###
+### Weather-Music API - HTTP Requests
+### Use this file with IntelliJ IDEA HTTP Client or VS Code REST Client extension
+###
+
+### Variables
+@baseUrl = http://localhost:8080
+@apiVersion = v1
+
+###############################################################################
+### HEALTH ENDPOINTS
+###############################################################################
+
+### Check External Services Health
+GET {{baseUrl}}/api/{{apiVersion}}/health/external
+Accept: application/json
+
+###############################################################################
+### WEATHER ENDPOINTS
+###############################################################################
+
+### Get Weather - Madrid (City Name)
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Madrid/weather
+Accept: application/json
+
+### Get Weather - London
+GET {{baseUrl}}/api/{{apiVersion}}/regions/London/weather
+Accept: application/json
+
+### Get Weather - New York
+GET {{baseUrl}}/api/{{apiVersion}}/regions/New York/weather
+Accept: application/json
+
+### Get Weather - Barcelona
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Barcelona/weather
+Accept: application/json
+
+### Get Weather - Paris
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Paris/weather
+Accept: application/json
+
+### Get Weather - Madrid with Country Code
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Madrid,ES/weather
+Accept: application/json
+
+### Get Weather - Coordinates (Madrid)
+GET {{baseUrl}}/api/{{apiVersion}}/regions/40.4168,-3.7038/weather
+Accept: application/json
+
+### Get Weather - Coordinates (London)
+GET {{baseUrl}}/api/{{apiVersion}}/regions/51.5074,-0.1278/weather
+Accept: application/json
+
+### Get Weather - Coordinates (New York)
+GET {{baseUrl}}/api/{{apiVersion}}/regions/40.7128,-74.0060/weather
+Accept: application/json
+
+### Get Weather - Invalid City (404 Error)
+GET {{baseUrl}}/api/{{apiVersion}}/regions/InvalidCity123/weather
+Accept: application/json
+
+###############################################################################
+### MOOD MUSIC ENDPOINTS
+###############################################################################
+
+### Get Mood Music - Madrid (Default: limit=10, type=both)
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Madrid/mood-music
+Accept: application/json
+
+### Get Mood Music - London (Rainy - Melancholic mood expected)
+GET {{baseUrl}}/api/{{apiVersion}}/regions/London/mood-music
+Accept: application/json
+
+### Get Mood Music - Barcelona (Sunny - Happy mood expected)
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Barcelona/mood-music
+Accept: application/json
+
+### Get Mood Music - Seattle (Rainy - Melancholic mood)
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Seattle/mood-music
+Accept: application/json
+
+### Get Mood Music - Miami (Sunny - Happy mood)
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Miami/mood-music
+Accept: application/json
+
+### Get Mood Music - Custom Limit (5 recommendations)
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Madrid/mood-music?limit=5
+Accept: application/json
+
+### Get Mood Music - Custom Limit (20 recommendations)
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Paris/mood-music?limit=20
+Accept: application/json
+
+### Get Mood Music - Only Playlists
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Madrid/mood-music?type=playlist
+Accept: application/json
+
+### Get Mood Music - Only Tracks
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Madrid/mood-music?type=track
+Accept: application/json
+
+### Get Mood Music - Both Types (explicit)
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Madrid/mood-music?type=both
+Accept: application/json
+
+### Get Mood Music - Custom Limit + Type
+GET {{baseUrl}}/api/{{apiVersion}}/regions/London/mood-music?limit=15&type=playlist
+Accept: application/json
+
+### Get Mood Music - Coordinates (Madrid)
+GET {{baseUrl}}/api/{{apiVersion}}/regions/40.4168,-3.7038/mood-music?limit=10
+Accept: application/json
+
+### Get Mood Music - Invalid Type (400 Error)
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Madrid/mood-music?type=invalid
+Accept: application/json
+
+###############################################################################
+### WEATHER CONTEXT ENDPOINTS (Aggregated)
+###############################################################################
+
+### Get Weather Context - Madrid (Default: limit=10)
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Madrid/weather-context
+Accept: application/json
+
+### Get Weather Context - London
+GET {{baseUrl}}/api/{{apiVersion}}/regions/London/weather-context
+Accept: application/json
+
+### Get Weather Context - New York
+GET {{baseUrl}}/api/{{apiVersion}}/regions/New York/weather-context
+Accept: application/json
+
+### Get Weather Context - Barcelona
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Barcelona/weather-context
+Accept: application/json
+
+### Get Weather Context - Paris
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Paris/weather-context
+Accept: application/json
+
+### Get Weather Context - Custom Limit (5)
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Madrid/weather-context?limit=5
+Accept: application/json
+
+### Get Weather Context - Custom Limit (25)
+GET {{baseUrl}}/api/{{apiVersion}}/regions/London/weather-context?limit=25
+Accept: application/json
+
+### Get Weather Context - Coordinates (Madrid)
+GET {{baseUrl}}/api/{{apiVersion}}/regions/40.4168,-3.7038/weather-context?limit=10
+Accept: application/json
+
+### Get Weather Context - Coordinates (Tokyo)
+GET {{baseUrl}}/api/{{apiVersion}}/regions/35.6762,139.6503/weather-context?limit=10
+Accept: application/json
+
+###############################################################################
+### ERROR TESTING
+###############################################################################
+
+### 404 - Region Not Found
+GET {{baseUrl}}/api/{{apiVersion}}/regions/NonExistentCity999/weather
+Accept: application/json
+
+### 400 - Invalid Region Format (should still work or return 404)
+GET {{baseUrl}}/api/{{apiVersion}}/regions/123/weather
+Accept: application/json
+
+### 400 - Invalid Type Parameter
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Madrid/mood-music?type=wrongtype
+Accept: application/json
+
+###############################################################################
+### CITIES BY WEATHER CONDITION (for testing different moods)
+###############################################################################
+
+### Rainy Cities (Expected: MELANCHOLIC mood)
+# valence: 0.0-0.4, energy: 0.3-0.6
+# Keywords: rainy day, chill, melancholy, introspective, cozy rain, indie chill, lo-fi
+
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Seattle/mood-music
+###
+GET {{baseUrl}}/api/{{apiVersion}}/regions/London/mood-music
+###
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Dublin/mood-music
+
+### Sunny Cities (Expected: HAPPY mood)
+# valence: 0.6-1.0, energy: 0.5-0.8
+# Keywords: happy, sunny, upbeat, summer vibes, feel good, positive
+
+###
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Barcelona/mood-music
+###
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Miami/mood-music
+###
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Los Angeles/mood-music
+
+### Cloudy Cities (Expected: CALM mood)
+# valence: 0.3-0.6, energy: 0.2-0.5
+# Keywords: calm, peaceful, relaxing, chill, ambient
+
+###
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Berlin/mood-music
+###
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Paris/mood-music
+###
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Amsterdam/mood-music
+
+### Snowy Cities (Expected: PEACEFUL mood)
+# valence: 0.4-0.7, energy: 0.1-0.4
+# Keywords: peaceful, winter, serene, quiet, meditation, ambient
+
+###
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Oslo/mood-music
+###
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Reykjavik/mood-music
+###
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Helsinki/mood-music
+
+###############################################################################
+### COMPLETE WORKFLOW EXAMPLE
+###############################################################################
+
+### 1. Check if external services are healthy
+GET {{baseUrl}}/api/{{apiVersion}}/health/external
+
+### 2. Get weather for a city
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Madrid/weather
+
+### 3. Get mood-based music for the same city
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Madrid/mood-music?limit=10
+
+### 4. Or get everything in one call (weather + mood + music)
+GET {{baseUrl}}/api/{{apiVersion}}/regions/Madrid/weather-context?limit=10
+
+###############################################################################
+### COORDINATES REFERENCE
+###############################################################################
+
+# Major Cities Coordinates (lat,lon):
+# Madrid: 40.4168,-3.7038
+# London: 51.5074,-0.1278
+# New York: 40.7128,-74.0060
+# Paris: 48.8566,2.3522
+# Tokyo: 35.6762,139.6503
+# Sydney: -33.8688,151.2093
+# Barcelona: 41.3851,2.1734
+# Los Angeles: 34.0522,-118.2437
+# Miami: 25.7617,-80.1918
+# Berlin: 52.5200,13.4050
+
+###
